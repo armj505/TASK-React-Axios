@@ -1,7 +1,52 @@
 import React from "react";
-import petsData from "../petsData";
+import { useNavigate, useParams } from "react-router-dom";
+import { deletePet, getPetsById, updatePet } from "../api/pets";
+// import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 const PetDetail = () => {
-  const pet = petsData[0];
+  const { petId } = useParams();
+  const navigate = useNavigate();
+  // const [petAdopt, setPetAdopt] = useState();
+  // const [petData, setPetData] = useState({});
+
+  // const callAPI = async () => {
+  //   const res = await getPetsById(petId);
+  //   setPetData(res);
+  // };
+
+  // useEffect(() => {
+  //   callAPI();
+  // }, []);
+  // const adoptPet = () => {
+  //   updatePet(petId, pet.name, pet.type, pet.image, pet.adopted);
+  // };
+  const newQueryClient = useQueryClient();
+  const { data: petData, isLoading } = useQuery({
+    queryKey: ["pets", petId],
+    queryFn: () => getPetsById(petId),
+  });
+  const { mutate: adoptPet } = useMutation({
+    mutationFn: () =>
+      updatePet(petId, pet.name, pet.type, pet.image, !pet.adopted),
+    onSuccess: () => {
+      newQueryClient.invalidateQueries({ queryKey: ["pets", petId] });
+    },
+  });
+  const { mutate: removePet } = useMutation({
+    mutationFn: () => deletePet(petId),
+    onSuccess: () => {
+      navigate(-1);
+    },
+  });
+
+  if (isLoading) return <h1>Loading...</h1>;
+
+  const pet = petData;
+  if (!pet) {
+    return <h1>There is no pet with the id: {petId}</h1>;
+  }
+
   return (
     <div className="bg-[#F9E3BE] w-screen h-[100vh] flex justify-center items-center">
       <div className="border border-black rounded-md w-[70%] h-[70%] overflow-hidden flex flex-col md:flex-row p-5">
@@ -17,11 +62,17 @@ const PetDetail = () => {
           <h1>Type: {pet.type}</h1>
           <h1>adopted: {pet.adopted}</h1>
 
-          <button className="w-[70px] border border-black rounded-md  hover:bg-green-400 mb-5">
-            Adobt
+          <button
+            onClick={adoptPet}
+            className="w-[70px] border border-black rounded-md  hover:bg-green-400 mb-5"
+          >
+            {pet.adopted ? "Set not adopted" : "Adopt"}
           </button>
 
-          <button className="w-[70px] border border-black rounded-md  hover:bg-red-400">
+          <button
+            onClick={removePet}
+            className="w-[70px] border border-black rounded-md  hover:bg-red-400"
+          >
             Delete
           </button>
         </div>
